@@ -197,7 +197,10 @@ func prepareTransaction(ctx context.Context, request *TxRequest, from common.Add
 	} else {
 		gasPrice = request.GasPrice
 	}
-
+	var minGasPrice = big.NewInt(11 * 1000 * 1000 * 1000)
+	if gasPrice.Cmp(minGasPrice) == -1 {
+		gasPrice = minGasPrice
+	}
 	if request.To != nil {
 		return types.NewTransaction(
 			nonce,

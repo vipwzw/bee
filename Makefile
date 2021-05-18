@@ -16,7 +16,7 @@ all: build lint vet test-race binary
 binary: export CGO_ENABLED=0
 binary: dist FORCE
 	$(GO) version
-	$(GO) build -trimpath -ldflags "$(LDFLAGS)" -o dist/bee ./cmd/bee
+	$(GO) build -v -trimpath -ldflags "$(LDFLAGS)" -o dist/bee ./cmd/bee
 
 dist:
 	mkdir $@
@@ -56,7 +56,7 @@ test:
 .PHONY: build
 build: export CGO_ENABLED=0
 build:
-	$(GO) build -trimpath -ldflags "$(LDFLAGS)" ./...
+	$(GO) build -v -trimpath -ldflags "$(LDFLAGS)" ./...
 
 .PHONY: githooks
 githooks:
