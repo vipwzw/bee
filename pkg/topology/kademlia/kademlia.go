@@ -33,6 +33,8 @@ const (
 	maxConnAttempts        = 3 // when there is maxConnAttempts failed connect calls for a given peer it is considered non-connectable
 	maxBootnodeAttempts    = 3 // how many attempts to dial to bootnodes before giving up
 	defaultBitSuffixLength = 2 // the number of bits used to create pseudo addresses for balancing
+
+	peerConnectionAttemptTimeout = 5 * time.Second // Timeout for establishing a new connection with peer.
 )
 
 var (
@@ -654,7 +656,7 @@ func recalcDepth(peers *pslice.PSlice, radius uint8) uint8 {
 // as well as sends the peers we are connected to to the newly connected peer
 func (k *Kad) connect(ctx context.Context, peer swarm.Address, ma ma.Multiaddr) error {
 	k.logger.Infof("attempting to connect to peer %s", peer)
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, peerConnectionAttemptTimeout)
 	defer cancel()
 	i, err := k.p2p.Connect(ctx, ma)
 	if err != nil {
@@ -1252,17 +1254,13 @@ func (k *Kad) Close() error {
 	cc := make(chan struct{})
 
 	go func() {
-		defer close(cc)
 		k.wg.Wait()
+		close(cc)
 	}()
-
-	if err := k.collector.Finalize(time.Now()); err != nil {
-		k.logger.Debugf("kademlia: unable to finalize open sessions: %v", err)
-	}
 
 	select {
 	case <-cc:
-	case <-time.After(10 * time.Second):
+	case <-time.After(peerConnectionAttemptTimeout):
 		k.logger.Warning("kademlia shutting down with announce goroutines")
 	}
 
@@ -1270,6 +1268,10 @@ func (k *Kad) Close() error {
 	case <-k.done:
 	case <-time.After(5 * time.Second):
 		k.logger.Warning("kademlia manage loop did not shut down properly")
+	}
+
+	if err := k.collector.Finalize(time.Now()); err != nil {
+		k.logger.Debugf("kademlia: unable to finalize open sessions: %v", err)
 	}
 
 	return nil
