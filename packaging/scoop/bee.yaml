@@ -5,7 +5,7 @@
 ## initial nodes to connect to (default [/dnsaddr/bootnode.ethswarm.org])
 # bootnode: [/dnsaddr/bootnode.ethswarm.org]
 ## enable clef signer
-# clef-signer-enable: false
+# clef-signer-enable: true
 ## clef signer endpoint
 # clef-signer-endpoint: /usr/local/var/lib/swarm-clef/clef.ipc
 ## config file (default is /home/<user>/.bee.yaml)
