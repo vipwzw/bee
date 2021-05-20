@@ -98,7 +98,7 @@ type Bee struct {
 
 type Options struct {
 	DataDir                    string
-	DBCapacity                 uint64
+	CacheCapacity              uint64
 	DBOpenFilesLimit           uint64
 	DBWriteBufferSize          uint64
 	DBBlockCacheCapacity       uint64
@@ -315,7 +315,7 @@ func NewBee(addr string, swarmAddress swarm.Address, publicKey ecdsa.PublicKey, 
 		path = filepath.Join(o.DataDir, "localstore")
 	}
 	lo := &localstore.Options{
-		Capacity:               o.DBCapacity,
+		Capacity:               o.CacheCapacity,
 		OpenFilesLimit:         o.DBOpenFilesLimit,
 		BlockCacheCapacity:     o.DBBlockCacheCapacity,
 		WriteBufferSize:        o.DBWriteBufferSize,
@@ -346,27 +346,20 @@ func NewBee(addr string, swarmAddress swarm.Address, publicKey ecdsa.PublicKey, 
 
 	var postageSyncStart uint64 = 0
 	if !o.Standalone {
-		postageContractAddress, priceOracleAddress, startBlock, found := listener.DiscoverAddresses(chainID)
+		postageContractAddress, startBlock, found := listener.DiscoverAddresses(chainID)
 		if o.PostageContractAddress != "" {
 			if !common.IsHexAddress(o.PostageContractAddress) {
 				return nil, errors.New("malformed postage stamp address")
 			}
 			postageContractAddress = common.HexToAddress(o.PostageContractAddress)
-		}
-		if o.PriceOracleAddress != "" {
-			if !common.IsHexAddress(o.PriceOracleAddress) {
-				return nil, errors.New("malformed price oracle address")
-			}
-			priceOracleAddress = common.HexToAddress(o.PriceOracleAddress)
-		}
-		if (o.PostageContractAddress == "" || o.PriceOracleAddress == "") && !found {
+		} else if !found {
 			return nil, errors.New("no known postage stamp addresses for this network")
 		}
 		if found {
 			postageSyncStart = startBlock
 		}
 
-		eventListener := listener.New(logger, swapBackend, postageContractAddress, priceOracleAddress, o.BlockTime)
+		eventListener := listener.New(logger, swapBackend, postageContractAddress, o.BlockTime)
 		b.listenerCloser = eventListener
 
 		batchSvc = batchservice.New(batchStore, logger, eventListener)
