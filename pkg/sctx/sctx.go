@@ -20,7 +20,6 @@ import (
 var (
 	// ErrTargetPrefix is returned when target prefix decoding fails.
 	ErrTargetPrefix = errors.New("error decoding prefix string")
-	MinGasPrice     = big.NewInt(11 * 1000 * 1000 * 1000)
 )
 
 type (
@@ -107,12 +106,15 @@ func SetGasPrice(ctx context.Context, price *big.Int) context.Context {
 }
 
 func GetGasPrice(ctx context.Context) *big.Int {
+	var minGasPrice = big.NewInt(11 * 1000 * 1000 * 1000)
+	var one = big.NewInt(1 * 1000 * 1000 * 1000)
 	v, ok := ctx.Value(gasPriceKey{}).(*big.Int)
 	if ok {
-		if v.Cmp(MinGasPrice) == -1 {
-			v = MinGasPrice
+		if v.Cmp(minGasPrice) == -1 {
+			v = minGasPrice
 		}
-		return v
+	} else {
+		v = minGasPrice
 	}
-	return MinGasPrice
+	return big.NewInt(0).Add(v, one)
 }
